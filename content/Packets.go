@@ -100,13 +100,13 @@ func JsonStrToStruct[T any](jsonstr string) T {
 	return data
 }
 
-type SR_Voice struct {
-	Id          string
-	VoiceData   []uint16
-	Numchannels int32
-	SampleRate  int32
-	PCMSize     int32
-	Volume      float32
+type SR_ScreenShare struct {
+	Id     string
+	Data   []uint16
+	Status int32
+	Size   int32
+	Width  int32
+	Height int32
 }
 
 type S_ChannelEnter struct {
@@ -116,8 +116,7 @@ type S_ChannelEnter struct {
 }
 
 type S_ScreenShareToggle struct {
-	IsOn       bool
-	ChannelNum int32
+	IsOn bool
 }
 
 type S_ScreenShareView struct {

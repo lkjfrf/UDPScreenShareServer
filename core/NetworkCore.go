@@ -56,7 +56,7 @@ func (nc *NetworkCore) Connect(port string) {
 
 func (nc *NetworkCore) Recv(conn *net.UDPConn) {
 	for {
-		data := make([]byte, 32*1024)
+		data := make([]byte, 65507)
 		n, addr, err := conn.ReadFromUDP(data)
 		if err != nil {
 			log.Println(err)
@@ -65,16 +65,17 @@ func (nc *NetworkCore) Recv(conn *net.UDPConn) {
 		//_, err = conn.WriteToUDP(data, addr)
 		//log.Println("SendPacket ", addr, "/", conn, "/", string(data))
 
-		if n > 0 {
+		if n > 0 && err == nil {
+			log.Println("pktsize : ", n)
 			pktsize, pktid := nc.ParseHeader(data)
 			log.Println("RecvPacket : ", addr, " - ", "pktid : ", pktid)
 
 			if pktsize > 4 {
-				recv := data[4:pktsize]
+				data = data[4:pktsize]
 				//n, _, _ := conn.ReadFrom(recv)
 				if n > 4 || pktid < 100 {
 					if content.GetContentManager().HandlerFunc[(int)(pktid)] != nil {
-						content.GetContentManager().HandlerFunc[(int)(pktid)](conn, addr, string(recv))
+						content.GetContentManager().HandlerFunc[(int)(pktid)](conn, addr, string(data))
 					}
 				}
 			}
