@@ -65,7 +65,6 @@ func (gs *GlobalSession) BroadCastToSameChannelNum(ChannelNum int32, recvpkt any
 		if value.(*Player).Channel == ChannelNum {
 			gs.SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
 			//gs.SendByte2(value.(*Player).Conn, data)
-			log.Println("Send : ", key, "-")
 		}
 		return true
 	})

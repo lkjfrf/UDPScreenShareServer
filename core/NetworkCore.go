@@ -50,13 +50,23 @@ func (nc *NetworkCore) Connect(port string) {
 		log.Println("Connect Success : ", conn)
 	}
 
-	go nc.Recv(conn)
-
+	MaxGoRoutine := 500
+	waitChan := make(chan struct{}, MaxGoRoutine)
+	count := 0
+	for {
+		waitChan <- struct{}{}
+		count++
+		go func(count int) {
+			nc.Recv(conn)
+			<-waitChan
+		}(count)
+	}
+	//go nc.Recv(conn)
 }
 
 func (nc *NetworkCore) Recv(conn *net.UDPConn) {
 	for {
-		data := make([]byte, 65507)
+		data := make([]byte, 64*1024)
 		n, addr, err := conn.ReadFromUDP(data)
 		if err != nil {
 			log.Println(err)
@@ -66,7 +76,6 @@ func (nc *NetworkCore) Recv(conn *net.UDPConn) {
 		//log.Println("SendPacket ", addr, "/", conn, "/", string(data))
 
 		if n > 0 && err == nil {
-			log.Println("pktsize : ", n)
 			pktsize, pktid := nc.ParseHeader(data)
 			log.Println("RecvPacket : ", addr, " - ", "pktid : ", pktid)
 

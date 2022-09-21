@@ -45,7 +45,6 @@ func (cm *ContentManager) ChannelEnter(conn *net.UDPConn, addr *net.UDPAddr, jso
 	// if data.ChannelType == 2 {
 	// 	cm.ScreenChannels.LoadOrStore(data.ChannelNum, &sync.Map{})
 	// }
-	log.Println(jsonstr)
 	GetSession().NewPlayer(data.Id, conn, addr, data.ChannelNum)
 
 	// _, AlreadyLogin := GetSession().GSession.Load(data.Id)
@@ -75,8 +74,7 @@ func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, json
 	data := SR_ScreenShare{}
 	json.Unmarshal([]byte(jsonstr), &data)
 
-	id := GetSession().GetPlayerIdByCon(conn)
-	GetSession().BroadCastToSameChannelNum(GetSession().GetChannelNumById(id), data, EScreenShare)
+	GetSession().BroadCastToSameChannelNum(GetSession().GetChannelNumById(data.Id), data, EScreenShare)
 }
 
 func (cm *ContentManager) ScreenShareToggle(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
@@ -127,28 +125,24 @@ func (cm *ContentManager) PlayerLogout(conn *net.UDPConn, addr *net.UDPAddr, jso
 }
 
 func (cm *ContentManager) Test() {
-	// cm.ScreenChannels.LoadOrStore(1, "1")
-	// cm.ScreenChannels.LoadOrStore(2, "2")
-	// cm.ScreenChannels.LoadOrStore(1, "3")
+	// a := []uint8{255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 255, 219, 0, 67, 0, 80, 55, 60, 70, 60, 50, 80, 70, 65, 70, 90, 85, 80, 95, 120, 200, 130, 120, 110, 110, 120, 245, 175, 185, 145, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+	// log.Println(a)
+	// b := []uint16{255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 255, 219, 0, 67, 0, 80, 55, 60, 70, 60, 50, 80, 70, 65, 70, 90, 85, 80, 95, 120, 200, 130, 120, 110, 110, 120, 245, 175, 185, 145, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+	// log.Println(b)
 
-	// if a, ok := cm.ScreenChannels.Load(1); ok {
-	// 	log.Println(a)
+	// jsona := "{\"id\":\"q1\",\"data\":[255,216,255,224,0,16,74,70,73,70]}"
+	// log.Println(jsona)
+	// type st8 struct {
+	// 	Data []uint8
+	// }
+	// type st16 struct {
+	// 	Data []uint16
 	// }
 
-	// if Ch, ok := cm.ScreenChannels.Load(1); ok {
-	// 	if true {
-	// 		if ChPlayer, ok := Ch.(*sync.Map).LoadOrStore("song", &sync.Map{}); ok {
-	// 			ChPlayer.(*sync.Map).Store("hihi", true)
-	// 		}
-	// 	}
-	// }
-	// if Ch, ok := cm.ScreenChannels.Load(1); ok {
-	// 	if true {
-	// 		if ChPlayer, ok := Ch.(*sync.Map).LoadOrStore("song", &sync.Map{}); ok {
-	// 			ChPlayer.(*sync.Map).Store("noo", 123)
-	// 			a, _ := ChPlayer.(*sync.Map).Load("hihi")
-	// 			log.Println(a)
-	// 		}
-	// 	}
-	// }
+	// data := st8{}
+	// data2 := st16{}
+	// json.Unmarshal([]byte(jsona), &data)
+	// json.Unmarshal([]byte(jsona), &data2)
+	// log.Println(data.Data)
+	// log.Println(data2.Data)
 }

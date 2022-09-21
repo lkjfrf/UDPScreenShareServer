@@ -102,11 +102,11 @@ func JsonStrToStruct[T any](jsonstr string) T {
 
 type SR_ScreenShare struct {
 	Id     string
-	Data   []uint16
 	Status int32
 	Size   int32
 	Width  int32
 	Height int32
+	Data   []uint16
 }
 
 type S_ChannelEnter struct {
