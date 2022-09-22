@@ -88,8 +88,8 @@ const (
 	ERequestGroupUserList
 
 	ESaveGroupAlarm //70
+	EScreenWatchToggle
 	EScreenShareToggle
-	EScreenShareView
 
 	Max
 )
@@ -101,12 +101,13 @@ func JsonStrToStruct[T any](jsonstr string) T {
 }
 
 type SR_ScreenShare struct {
-	Id     string
-	Status int32
-	Size   int32
-	Width  int32
-	Height int32
-	Data   []uint16
+	Id       string
+	Status   int32
+	Size     int32
+	Width    int32
+	Height   int32
+	Data     []uint16
+	Sequence int32
 }
 
 type S_ChannelEnter struct {
@@ -115,19 +116,36 @@ type S_ChannelEnter struct {
 	ChannelType int32 // 0: Auditorium, 1: Convention, 2: VirtualOffice, 3: VirtualGallery, 4: Plaza
 }
 
-type S_ScreenShareToggle struct {
-	IsOn bool
-}
+// type S_ScreenShareToggle struct {
+// 	IsOn bool
+// }
 
-type S_ScreenShareView struct {
-	ViewTarget string
-	IsOn       bool
-}
+// type S_ScreenShareView struct {
+// 	ViewTarget string
+// 	IsOn       bool
+// }
 
-type R_ScreenShareView struct {
-	IsHasViewer bool
-}
+// type R_ScreenShareView struct {
+// 	IsHasViewer bool
+// }
 
 type S_PlayerLogout struct {
 	Id string
+}
+
+// TCP 에서 처리---------------------------
+type S_ScreenShareToggle struct { // 화면공유 가능상태 여부 물어봄
+	IsOn       bool
+	ChannelNum int32
+}
+
+type R_ScreenShareToggle struct { // 화면공유 가능상태 여부 알려줌
+	IsOn bool
+}
+
+// UDP 에서 처리 --------------------------
+type S_ScreenWatchToggle struct { // 스크린 화면을 보겠다 토글
+	Id         string
+	IsOn       bool
+	ChannelNum int32
 }

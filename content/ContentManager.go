@@ -9,9 +9,12 @@ import (
 )
 
 type ContentManager struct {
-	HandlerFunc    map[int]func(*net.UDPConn, *net.UDPAddr, string)
-	ScreenChannels sync.Map // 스크린 공유 채널목록들 안에 ScreenShares 저장
-	ScreenShares   sync.Map // 스크린 공유자들 안에 스크린 관람자들 ID 저장
+	HandlerFunc map[int]func(*net.UDPConn, *net.UDPAddr, string)
+}
+
+type Connection struct {
+	Con  *net.UDPConn
+	Addr *net.UDPAddr
 }
 
 var CM_Ins *ContentManager
@@ -26,14 +29,11 @@ func GetContentManager() *ContentManager {
 
 func (cm *ContentManager) Init() {
 	cm.HandlerFunc = make(map[int]func(*net.UDPConn, *net.UDPAddr, string), 0)
-	cm.ScreenChannels = sync.Map{}
-	cm.ScreenShares = sync.Map{}
 
 	cm.HandlerFunc[ChannelEnter] = cm.ChannelEnter
 	cm.HandlerFunc[EScreenShare] = cm.ScreenShare
-	cm.HandlerFunc[EScreenShareToggle] = cm.ScreenShareToggle
-	cm.HandlerFunc[EScreenShareView] = cm.ScreenShareView
 	cm.HandlerFunc[PlayerLogout] = cm.PlayerLogout
+	cm.HandlerFunc[EScreenWatchToggle] = cm.ScreenWatchToggle
 
 	cm.Test()
 }
@@ -42,107 +42,88 @@ func (cm *ContentManager) ChannelEnter(conn *net.UDPConn, addr *net.UDPAddr, jso
 	data := S_ChannelEnter{}
 	json.Unmarshal([]byte(jsonstr), &data)
 
-	// if data.ChannelType == 2 {
-	// 	cm.ScreenChannels.LoadOrStore(data.ChannelNum, &sync.Map{})
-	// }
-	GetSession().NewPlayer(data.Id, conn, addr, data.ChannelNum)
+	Con := Connection{Con: conn, Addr: addr}
+	_, AlreadyLogin := GetSession().ConMap.Load(Con)
 
-	// _, AlreadyLogin := GetSession().GSession.Load(data.Id)
-	// if !AlreadyLogin {
-	// 	GetSession().NewPlayer(data.Id, conn, addr, data.ChannelNum)
-	// } else {
-	// 	if p, ok := GetSession().GSession.Load(data.Id); ok {
-	// 		p.(*Player).Channel = data.ChannelNum
-	// 	}
-	// }
-
+	if !AlreadyLogin {
+		GetSession().NewPlayer(data.Id, Con, data.ChannelNum)
+	} else {
+		if p, ok := GetSession().Players.Load(data.Id); ok {
+			p.(*Player).Channel = data.ChannelNum
+		}
+	}
 }
 
 func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
-
-	// id := GetSession().GetPlayerIdByCon(conn)
-	// channelNum := instance_gs.GetChannelNumById(id)
-	// if Ch, ok := cm.ScreenChannels.Load(channelNum); ok {
-	// 	if ChSharer, ok := Ch.(*sync.Map).Load(id); ok {
-	// 		ChSharer.(*sync.Map).Range(func(key, value any) bool {
-
-	// 			GetSession().SendByte(conn, addr, []byte(jsonstr))
-	// 			return true
-	// 		})
-	// 	}
-	// }
 	data := SR_ScreenShare{}
 	json.Unmarshal([]byte(jsonstr), &data)
 
-	GetSession().BroadCastToSameChannelNum(GetSession().GetChannelNumById(data.Id), data, EScreenShare)
+	sendBuffer := MakeSendBuffer(EScreenShare, data)
+
+	//	var SendQueue []Connection
+
+	GetSession().Players.Range(func(key, value any) bool {
+		//if value.(*Player).ScreenOn && value.(*Player).Channel == GetSession().GetChannelNumById(data.Id) {
+		if value.(*Player).Channel == GetSession().GetChannelNumById(data.Id) {
+			GetSession().SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
+			//SendQueue = append(SendQueue, Connection{Con: value.(*Player).Conn, Addr: value.(*Player).Addr})
+
+		}
+		return true
+	})
+
+	// maxHandle := 100
+	// totalSendLen := len(SendQueue)
+	// if totalSendLen == 0 {
+	// 	return
+	// }
+	// for j := 0; j <= totalSendLen/maxHandle; j++ {
+	// 	go func(j int) { // 100개의 패킷 전송당 1개의 go 루틴
+	// 		log.Println(j)
+	// 		if totalSendLen/maxHandle > j {
+	// 			for i := j * maxHandle; i < (j+1)*maxHandle; i++ {
+	// 				GetSession().SendByte(SendQueue[i].Con, SendQueue[i].Addr, sendBuffer)
+	// 			}
+	// 		} else if totalSendLen/maxHandle == j { // 마지막 고루틴
+	// 			for i := j * maxHandle; i < (j*maxHandle)+(totalSendLen-j*maxHandle); i++ {
+	// 				GetSession().SendByte(SendQueue[i].Con, SendQueue[i].Addr, sendBuffer)
+	// 			}
+	// 		}
+	// 	}(j)
+	// }
+
+	// for i := 0; i < len(SendQueue); i++ {
+	// 	GetSession().SendByte(SendQueue[i].Con, SendQueue[i].Addr, sendBuffer)
+	// }
+
+	//GetSession().BroadCastToSameChannelNum(GetSession().GetChannelNumById(data.Id), data, EScreenShare)
 }
 
-func (cm *ContentManager) ScreenShareToggle(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
-	data := S_ScreenShareToggle{}
+func (cm *ContentManager) ScreenWatchToggle(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
+	data := S_ScreenWatchToggle{}
 	json.Unmarshal([]byte(jsonstr), &data)
-	myId := GetSession().GetPlayerIdByCon(conn)
-	ChannelNum := GetSession().GetChannelNumById(myId)
-
-	if Ch, ok := cm.ScreenChannels.Load(ChannelNum); ok {
-		if data.IsOn {
-			Ch.(*sync.Map).LoadOrStore(myId, &sync.Map{})
-		} else {
-			Ch.(*sync.Map).Delete(myId)
-		}
-	}
-	log.Println(myId, "Has ", data.IsOn, " ShareScreen")
-}
-
-func (cm *ContentManager) ScreenShareView(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
-	data := S_ScreenShareView{}
-	json.Unmarshal([]byte(jsonstr), &data)
-	myId := GetSession().GetPlayerIdByCon(conn)
-	if Ch, ok := cm.ScreenChannels.Load(GetSession().GetChannelNumById(myId)); ok {
-		if ChSharer, ok := Ch.(*sync.Map).Load(data.ViewTarget); ok {
-			if data.IsOn {
-				ChSharer.(*sync.Map).Store(myId, myId)
-
-				packet := R_ScreenShareView{IsHasViewer: true}
-				GetSession().SendPacketById(myId, packet, EScreenShareView)
-			} else {
-				ChSharer.(*sync.Map).Delete(myId)
-			}
-		}
+	//id := GetSession().GetPlayerIdByCon(Connection{Con: conn, Addr: addr})
+	if p, ok := GetSession().Players.Load(data.Id); ok {
+		p.(*Player).ScreenOn = data.IsOn
 	}
 }
 
 func (cm *ContentManager) PlayerLogout(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
 	data := S_PlayerLogout{}
 	json.Unmarshal([]byte(jsonstr), &data)
-	ChannelNum := GetSession().GetChannelNumById(data.Id)
 
-	if Ch, ok := cm.ScreenChannels.Load(ChannelNum); ok {
-		Ch.(*sync.Map).Delete(data.Id)
-	}
-	GetSession().GSession.Delete(data.Id)
-	GetSession().ConMap.Delete(conn)
+	GetSession().Players.Delete(data.Id)
+	GetSession().ConMap.Delete(Connection{Con: conn, Addr: addr})
 	log.Println(data.Id, " Log out")
 }
 
 func (cm *ContentManager) Test() {
-	// a := []uint8{255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 255, 219, 0, 67, 0, 80, 55, 60, 70, 60, 50, 80, 70, 65, 70, 90, 85, 80, 95, 120, 200, 130, 120, 110, 110, 120, 245, 175, 185, 145, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
-	// log.Println(a)
-	// b := []uint16{255, 216, 255, 224, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 255, 219, 0, 67, 0, 80, 55, 60, 70, 60, 50, 80, 70, 65, 70, 90, 85, 80, 95, 120, 200, 130, 120, 110, 110, 120, 245, 175, 185, 145, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
-	// log.Println(b)
-
-	// jsona := "{\"id\":\"q1\",\"data\":[255,216,255,224,0,16,74,70,73,70]}"
-	// log.Println(jsona)
-	// type st8 struct {
-	// 	Data []uint8
+	// GetSession().Players.Store("q", 123)
+	// if p, ok := GetSession().Players.LoadAndDelete("q"); ok {
+	// 	log.Println(p)
 	// }
-	// type st16 struct {
-	// 	Data []uint16
+	// if p, ok := GetSession().Players.Load("q"); ok {
+	// 	log.Println(p)
 	// }
 
-	// data := st8{}
-	// data2 := st16{}
-	// json.Unmarshal([]byte(jsona), &data)
-	// json.Unmarshal([]byte(jsona), &data2)
-	// log.Println(data.Data)
-	// log.Println(data2.Data)
 }

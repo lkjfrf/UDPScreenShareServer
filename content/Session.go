@@ -9,8 +9,8 @@ import (
 )
 
 type GlobalSession struct {
-	GSession sync.Map
-	ConMap   sync.Map
+	Players sync.Map
+	ConMap  sync.Map
 }
 
 var instance_gs *GlobalSession
@@ -24,27 +24,29 @@ func GetSession() *GlobalSession {
 }
 
 type Player struct {
-	Conn    *net.UDPConn
-	Addr    *net.UDPAddr
-	Channel int32
+	Conn     *net.UDPConn
+	Addr     *net.UDPAddr
+	Channel  int32
+	ScreenOn bool
 }
 
 func (gs *GlobalSession) Init() {
-	gs.GSession = sync.Map{}
+	gs.Players = sync.Map{}
 	gs.ConMap = sync.Map{}
 }
 
-func (gs *GlobalSession) NewPlayer(id string, c *net.UDPConn, addr *net.UDPAddr, channelNum int32) {
+func (gs *GlobalSession) NewPlayer(id string, c Connection, channelNum int32) {
 	Con_player := &Player{}
-	Con_player.Conn = c
+	Con_player.Conn = c.Con
+	Con_player.Addr = c.Addr
 	Con_player.Channel = channelNum
-	Con_player.Addr = addr
-	gs.GSession.Store(id, Con_player)
+	Con_player.ScreenOn = false
+	gs.Players.Store(id, Con_player)
 	gs.ConMap.Store(c, id)
 	log.Println(id, " Enter")
 }
 
-func (gs *GlobalSession) GetPlayerIdByCon(c *net.UDPConn) string {
+func (gs *GlobalSession) GetPlayerIdByCon(c Connection) string {
 	if id, ok := gs.ConMap.Load(c); ok {
 		return id.(string)
 	}
@@ -52,7 +54,7 @@ func (gs *GlobalSession) GetPlayerIdByCon(c *net.UDPConn) string {
 }
 
 func (gs *GlobalSession) GetChannelNumById(Id string) int32 {
-	if ch, ok := gs.GSession.Load(Id); ok {
+	if ch, ok := gs.Players.Load(Id); ok {
 		return ch.(*Player).Channel
 	}
 	return -1
@@ -61,7 +63,7 @@ func (gs *GlobalSession) GetChannelNumById(Id string) int32 {
 func (gs *GlobalSession) BroadCastToSameChannelNum(ChannelNum int32, recvpkt any, pkttype uint16) {
 	sendBuffer := MakeSendBuffer(pkttype, recvpkt)
 
-	gs.GSession.Range(func(key, value any) bool {
+	gs.Players.Range(func(key, value any) bool {
 		if value.(*Player).Channel == ChannelNum {
 			gs.SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
 			//gs.SendByte2(value.(*Player).Conn, data)
@@ -71,7 +73,7 @@ func (gs *GlobalSession) BroadCastToSameChannelNum(ChannelNum int32, recvpkt any
 }
 
 func (gs *GlobalSession) BroadCastToSameChannelNumExpetMe(ChannelNum int32, Id string, data []byte) {
-	gs.GSession.Range(func(key, value any) bool {
+	gs.Players.Range(func(key, value any) bool {
 		if value.(*Player).Channel == ChannelNum && key != Id {
 			gs.SendByte(value.(*Player).Conn, value.(*Player).Addr, data)
 		}
@@ -81,10 +83,10 @@ func (gs *GlobalSession) BroadCastToSameChannelNumExpetMe(ChannelNum int32, Id s
 
 func (gs *GlobalSession) BroadCastToSameChannelExpetMe(id string, data []byte) {
 	var TargetChannel int32
-	if p, ok := gs.GSession.Load(id); ok {
+	if p, ok := gs.Players.Load(id); ok {
 		TargetChannel = p.(*Player).Channel
 	}
-	gs.GSession.Range(func(key, value any) bool {
+	gs.Players.Range(func(key, value any) bool {
 		if value.(*Player).Channel == TargetChannel && key != id {
 			gs.SendByte(value.(*Player).Conn, value.(*Player).Addr, data)
 		}
@@ -134,7 +136,7 @@ func (gs *GlobalSession) SendPacketByConn(conn *net.UDPConn, addr *net.UDPAddr, 
 func (gs *GlobalSession) SendPacketById(Id string, recvpkt any, pkttype uint16) {
 	sendBuffer := MakeSendBuffer(pkttype, recvpkt)
 
-	if p, ok := gs.GSession.Load(Id); ok {
+	if p, ok := gs.Players.Load(Id); ok {
 		gs.SendByte(p.(*Player).Conn, p.(*Player).Addr, sendBuffer)
 	}
 }

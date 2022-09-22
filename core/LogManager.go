@@ -21,7 +21,7 @@ func GetLogManager() *LogHandler {
 }
 
 func (l *LogHandler) SetLogFile() {
-	logFilePath := "VoiceServerLog.log"
+	logFilePath := "ScreenShareServerLog.log"
 	// log 파일이 없을 경우 log 파일 생성
 	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
 		os.Create(logFilePath)
