@@ -50,18 +50,18 @@ func (nc *NetworkCore) Connect(port string) {
 		log.Println("Connect Success : ", conn)
 	}
 
-	MaxGoRoutine := 500
-	waitChan := make(chan struct{}, MaxGoRoutine)
-	count := 0
-	for {
-		waitChan <- struct{}{}
-		count++
-		go func(count int) {
-			nc.Recv(conn)
-			<-waitChan
-		}(count)
-	}
-	//go nc.Recv(conn)
+	// MaxGoRoutine := 500
+	// waitChan := make(chan struct{}, MaxGoRoutine)
+	// count := 0
+	// for {
+	// 	waitChan <- struct{}{}
+	// 	count++
+	// 	go func(count int) {
+	// 		nc.Recv(conn)
+	// 		<-waitChan
+	// 	}(count)
+	// }
+	go nc.Recv(conn)
 }
 
 func (nc *NetworkCore) Recv(conn *net.UDPConn) {

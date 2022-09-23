@@ -57,14 +57,14 @@ func (cm *ContentManager) ChannelEnter(conn *net.UDPConn, addr *net.UDPAddr, jso
 func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
 	data := SR_ScreenShare{}
 	json.Unmarshal([]byte(jsonstr), &data)
-
+	log.Println(data.Id, "- ", data.Sequence)
 	sendBuffer := MakeSendBuffer(EScreenShare, data)
 
 	//	var SendQueue []Connection
-
+	targetChannel := GetSession().GetChannelNumById(data.Id)
 	GetSession().Players.Range(func(key, value any) bool {
-		//if value.(*Player).ScreenOn && value.(*Player).Channel == GetSession().GetChannelNumById(data.Id) {
-		if value.(*Player).Channel == GetSession().GetChannelNumById(data.Id) {
+		if value.(*Player).ScreenOn && value.(*Player).Channel == targetChannel {
+			//if value.(*Player).Channel == GetSession().GetChannelNumById(data.Id) {
 			GetSession().SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
 			//SendQueue = append(SendQueue, Connection{Con: value.(*Player).Conn, Addr: value.(*Player).Addr})
 
