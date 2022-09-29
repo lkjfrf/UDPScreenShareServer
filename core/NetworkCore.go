@@ -2,7 +2,6 @@ package core
 
 import (
 	"encoding/binary"
-	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -41,7 +40,7 @@ func (nc *NetworkCore) Connect(port string) {
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Println("listening on ", port)
+	log.Println("listening on ", port)
 
 	conn, err := net.ListenUDP("udp", ServerAddr)
 	if err != nil {

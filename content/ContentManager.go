@@ -9,7 +9,9 @@ import (
 )
 
 type ContentManager struct {
-	HandlerFunc map[int]func(*net.UDPConn, *net.UDPAddr, string)
+	HandlerFunc     map[int]func(*net.UDPConn, *net.UDPAddr, string)
+	ScreenJsons     [][]uint16
+	ScreenPacketNum sync.Map
 }
 
 type Connection struct {
@@ -29,6 +31,7 @@ func GetContentManager() *ContentManager {
 
 func (cm *ContentManager) Init() {
 	cm.HandlerFunc = make(map[int]func(*net.UDPConn, *net.UDPAddr, string), 0)
+	cm.ScreenPacketNum = sync.Map{}
 
 	cm.HandlerFunc[ChannelEnter] = cm.ChannelEnter
 	cm.HandlerFunc[EScreenShare] = cm.ScreenShare
@@ -57,17 +60,28 @@ func (cm *ContentManager) ChannelEnter(conn *net.UDPConn, addr *net.UDPAddr, jso
 func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
 	data := SR_ScreenShare{}
 	json.Unmarshal([]byte(jsonstr), &data)
-	log.Println(data.Id, "- ", data.Sequence)
+	//log.Println(data.Id, "- ", data.Sequence, " / ", data.Size)
 	sendBuffer := MakeSendBuffer(EScreenShare, data)
+	//ch := GetSession().GetChannelNumById(data.Id)
 
-	//	var SendQueue []Connection
+	// if data.Status == 0 {
+	// 	cm.ScreenJsons[data.Status] = []uint16{}
+	// 	cm.ScreenPacketNum.Store(ch, data.Size/10000+1)
+	// 	cm.ScreenJsons[data.Status] = append(cm.ScreenJsons[data.Status], data.Data...)
+	// } else {
+	// 	if sNum, ok := cm.ScreenPacketNum.Load(ch); ok {
+	// 		cm.ScreenJsons[data.Status] = append(cm.ScreenJsons[data.Status], data.Data...)
+	// 		if data.Status == sNum {
+	// 			// SendImage
+	// 		}
+	// 	}
+	// }
+
 	targetChannel := GetSession().GetChannelNumById(data.Id)
 	GetSession().Players.Range(func(key, value any) bool {
 		if value.(*Player).ScreenOn && value.(*Player).Channel == targetChannel {
-			//if value.(*Player).Channel == GetSession().GetChannelNumById(data.Id) {
 			GetSession().SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
-			//SendQueue = append(SendQueue, Connection{Con: value.(*Player).Conn, Addr: value.(*Player).Addr})
-
+			//log.Println("ScreenSend : ", value.(*Player).Addr)
 		}
 		return true
 	})
@@ -118,12 +132,14 @@ func (cm *ContentManager) PlayerLogout(conn *net.UDPConn, addr *net.UDPAddr, jso
 }
 
 func (cm *ContentManager) Test() {
-	// GetSession().Players.Store("q", 123)
-	// if p, ok := GetSession().Players.LoadAndDelete("q"); ok {
-	// 	log.Println(p)
-	// }
-	// if p, ok := GetSession().Players.Load("q"); ok {
-	// 	log.Println(p)
-	// }
+	// PacketSize := 76293
+
+	// ScreenPacketNum := PacketSize / 10000
+	// a := []byte{122, 244, 244, 255}
+	// b := [4][4]byte{}
+	// b[1][2] = a
+	// cm.ScreenJsons = [ScreenPacketNum][2]byte{122}
+
+	// cm.ScreenJsons = append(cm.ScreenJsons, []byte{122, 244, 244, 255}...)
 
 }
