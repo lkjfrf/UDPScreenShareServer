@@ -62,26 +62,12 @@ func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, json
 	json.Unmarshal([]byte(jsonstr), &data)
 	//log.Println(data.Id, "- ", data.Sequence, " / ", data.Size)
 	sendBuffer := MakeSendBuffer(EScreenShare, data)
-	//ch := GetSession().GetChannelNumById(data.Id)
-
-	// if data.Status == 0 {
-	// 	cm.ScreenJsons[data.Status] = []uint16{}
-	// 	cm.ScreenPacketNum.Store(ch, data.Size/10000+1)
-	// 	cm.ScreenJsons[data.Status] = append(cm.ScreenJsons[data.Status], data.Data...)
-	// } else {
-	// 	if sNum, ok := cm.ScreenPacketNum.Load(ch); ok {
-	// 		cm.ScreenJsons[data.Status] = append(cm.ScreenJsons[data.Status], data.Data...)
-	// 		if data.Status == sNum {
-	// 			// SendImage
-	// 		}
-	// 	}
-	// }
 
 	targetChannel := GetSession().GetChannelNumById(data.Id)
 	GetSession().Players.Range(func(key, value any) bool {
-		if value.(*Player).ScreenOn && value.(*Player).Channel == targetChannel {
+		if value.(*Player).Channel == targetChannel {
 			GetSession().SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
-			//log.Println("ScreenSend : ", value.(*Player).Addr)
+			//log.Println("ScreenSend to: ", key, "by :", data.Sequence)
 		}
 		return true
 	})
@@ -113,6 +99,7 @@ func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, json
 	//GetSession().BroadCastToSameChannelNum(GetSession().GetChannelNumById(data.Id), data, EScreenShare)
 }
 
+// 이제 안씀---------------------------------------------------
 func (cm *ContentManager) ScreenWatchToggle(conn *net.UDPConn, addr *net.UDPAddr, jsonstr string) {
 	data := S_ScreenWatchToggle{}
 	json.Unmarshal([]byte(jsonstr), &data)

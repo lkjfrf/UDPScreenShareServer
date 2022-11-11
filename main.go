@@ -1,7 +1,8 @@
 package main
 
 import (
-	"time"
+	"log"
+	"sync"
 
 	"github.com/lkjfrf/content"
 	"github.com/lkjfrf/core"
@@ -10,6 +11,10 @@ import (
 func main() {
 	//core.GetLogManager().SetLogFile()
 	content.GetContentManager().Init()
-	core.GetNetworkCore().Init(":8005")
-	time.Sleep(time.Minute * 100)
+	core.GetNetworkCore().Init(":8002")
+	log.Println("ScreenShareServer Start")
+
+	mu := sync.Mutex{}
+	mu.Lock()
+	mu.Lock()
 }

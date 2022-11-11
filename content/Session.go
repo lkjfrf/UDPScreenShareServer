@@ -43,7 +43,7 @@ func (gs *GlobalSession) NewPlayer(id string, c Connection, channelNum int32) {
 	Con_player.ScreenOn = false
 	gs.Players.Store(id, Con_player)
 	gs.ConMap.Store(c, id)
-	log.Println(id, " Enter")
+	log.Println(id, "Enter", channelNum)
 }
 
 func (gs *GlobalSession) GetPlayerIdByCon(c Connection) string {
