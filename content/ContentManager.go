@@ -67,7 +67,6 @@ func (cm *ContentManager) ScreenShare(conn *net.UDPConn, addr *net.UDPAddr, json
 	GetSession().Players.Range(func(key, value any) bool {
 		if value.(*Player).Channel == targetChannel {
 			GetSession().SendByte(value.(*Player).Conn, value.(*Player).Addr, sendBuffer)
-			//log.Println("ScreenSend to: ", key, "by :", data.Sequence)
 		}
 		return true
 	})

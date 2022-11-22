@@ -84,7 +84,7 @@ func (nc *NetworkCore) Recv(conn *net.UDPConn) {
 					content.GetSession().Players.Range(func(key, value any) bool {
 						if value.(*content.Player).Channel == channelNum {
 							content.GetSession().SendByte(value.(*content.Player).Conn, value.(*content.Player).Addr, data)
-							log.Println("ScreenSend to: ", key, "/", channelNum)
+							//log.Println("ScreenSend to: ", key, "/", channelNum)
 						}
 						return true
 					})
