@@ -1,10 +1,12 @@
-package core
+package setting
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 type LogHandler struct {
@@ -21,7 +23,19 @@ func GetLogManager() *LogHandler {
 }
 
 func (l *LogHandler) SetLogFile() {
-	logFilePath := "Screen_Log.log"
+	// 현재시간
+	startDate := time.Now().Format("2006-01-02")
+	// log 폴더 위치
+	logFolderPath := GetStManager().NasPath
+
+	// log 파일 경로
+	logFilePath := fmt.Sprintf("%slogFile-%s.log", logFolderPath, startDate)
+
+	// log 폴더가 없을 경우 log 폴더 생성
+	if _, err := os.Stat(logFolderPath); os.IsNotExist(err) {
+		os.MkdirAll(logFolderPath, 0777)
+	}
+
 	// log 파일이 없을 경우 log 파일 생성
 	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
 		os.Create(logFilePath)
@@ -35,4 +49,5 @@ func (l *LogHandler) SetLogFile() {
 	// log 패키지를 활요하여 작성할 경우 log 파일에 작성되도록 설정
 	mw := io.MultiWriter(os.Stdout, logFile)
 	log.SetOutput(mw)
+	log.Println("LogStored In", logFolderPath)
 }

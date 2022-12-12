@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/lkjfrf/content"
+	"github.com/ScreenShare/content"
 )
 
 type NetworkCore struct {

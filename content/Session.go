@@ -11,6 +11,7 @@ import (
 type GlobalSession struct {
 	Players sync.Map
 	ConMap  sync.Map
+	//Channels map[int32]Player
 }
 
 var instance_gs *GlobalSession
